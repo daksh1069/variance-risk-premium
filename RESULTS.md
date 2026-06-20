@@ -4,8 +4,7 @@ Running results document, updated phase by phase. Every number below is
 reproducible from the scripts cited next to it — nothing here is hand-typed
 or rounded up from a different run.
 
-**Status:** Phases 0-4 complete and validated. Phase 5 (cost-aware short-vol
-carry) and Phase 6 (dashboard) not yet built.
+**Status:** Phases 0-5 complete and validated. Phase 6 (dashboard) not yet built.
 
 ## Assumptions (read before trusting anything below)
 
@@ -19,6 +18,10 @@ carry) and Phase 6 (dashboard) not yet built.
 | Option chain breadth | Standard monthly SPX expiries only (`SPX.OPT` parent symbol); **no SPXW weeklies** | Same budget constraint — weeklies would have ~4x'd the pull cost |
 | Realized variance | Forward 30-calendar-day close-to-close log returns, annualized by `252/n` (n = actual trading days in that window) | Standard estimator; Parkinson/Garman-Klass cross-checked as robustness |
 | VRP | `implied_variance(t) − realized_variance(t→t+30)`, strictly forward-looking | No look-ahead: realized side only ever uses returns after t |
+| Strategy sizing | Rolling short 30-day variance swaps, fixed *aggregate* vega notional, sized per-entry as `vega_notional / n` (n ≈ 21 trading days) since ~n tranches are open at once | Without the 1/n split, aggregate exposure would be ~n× the stated target |
+| Strategy costs | `TRANSACTION_COST_BPS = 5.0` + `2 × BID_ASK_HALF_SPREAD_BPS = 5.0` = 10 bps of vega notional, charged once at entry | **Placeholders, not real cost data** — flagged explicitly in `config.py`; revisit if real bid-ask data becomes available |
+| Strategy risk control | Tail stop: skip new entries when trailing (backward-looking, no look-ahead) 10-day realized vol > 35% | ~2.2 std above the full-sample mean trailing realized vol (14.3%, std 9.2%) — existing tranches still mature normally; only fresh issuance is paused |
+| Strategy P&L accrual | Each tranche's lifetime payoff (`variance_notional × VRP`) is amortized linearly across the trading days it's held | Simplification vs. true daily variance-swap mark-to-market (which has its own day-to-day volatility); documented, not hidden |
 
 ## Phase 2 — Implied Variance Validation (the project's correctness gate)
 
@@ -107,6 +110,51 @@ pricing the COVID crash in advance. This matches the brief's stated
 expectation: VRP turns sharply negative around vol spikes rather than
 smoothly absorbing them.
 
+## Phase 5 — Cost-Aware Short-Variance Carry
+
+Rolling short 30-day variance swaps (see assumptions above for sizing, costs,
+and the tail-stop). Reproduce: `python scripts/run_strategy.py`. Returns are
+P&L as a fraction of the fixed vega-notional risk base.
+
+| Metric | Gross | Net |
+|---|---|---|
+| CAGR | 19.3% | 18.0% |
+| Annualized vol | 9.23% | 9.22% |
+| Sharpe | 1.96 | 1.84 |
+| Max drawdown | −70.6% | −70.6% |
+| Worst day | −5.63% | −5.63% |
+| CVaR (5%) | −1.63% | −1.64% |
+| Total return (2017-2023) | +247% | +221% |
+
+**Regime breakdown (net):**
+
+| Regime | CAGR | Days |
+|---|---|---|
+| Calm/other | +40.7% | 1274 |
+| 2020 (COVID) | **−50.9%** | 253 |
+| 2022 (bear market) | +16.8% | 251 |
+
+Max drawdown (−70.6%) bottoms on **2020-04-23**; the 10 worst single days are
+all between Feb 27 and Mar 11, 2020. Feb 2018 (Volmageddon) also shows a
+real, visible drawdown — cumulative −14.8% by late Feb 2018 — but far
+smaller than COVID's. This is a genuine distinction, not an inconsistency:
+this strategy is exposed to *realized variance over the following 30 days*,
+not daily-rebalanced front-month VIX futures. Volmageddon was primarily a
+violent one-day repricing of near-term implied vol (what destroyed
+daily-rebalanced products like XIV); it did not translate into anywhere
+near as much *sustained* 30-day realized variance as COVID did. Both the
+attractive calm-regime Sharpe and the severe, regime-dependent drawdowns
+match the brief's stated expectations — the tail is reported here as the
+headline finding, not smoothed into the average.
+
+The tail stop (skip new entries when trailing realized vol > 35%) fired on
+62 of 1,676 candidate days, all within the COVID window — it stops *new*
+exposure from being added once a crisis is already visible, but cannot
+protect tranches already opened during the preceding calm period. That
+residual exposure is the entire source of the COVID drawdown above; this is
+disclosed as a real, structural limitation of a tail stop (as opposed to a
+hedge), not papered over.
+
 ## Limitations (disclosed, not hidden)
 
 - No bid/ask quotes — last-trade close only (see Phase 2 bug #1's mitigation).
@@ -118,6 +166,15 @@ smoothly absorbing them.
 - Data window is 2017-2023, not extended to the present, due to the
   Databento credit budget ($92.61 of ~$105 spent on the full SPX option
   chain pull; see the spend ledger at `data/raw/databento/.spend_ledger.json`).
+- Transaction-cost and bid-ask bps are placeholders, not measured real
+  costs (see assumptions table above).
+- Strategy P&L is a linear-amortization approximation of true variance-swap
+  mark-to-market (see assumptions table above) — not a delta-hedged options
+  simulation, so it doesn't capture intraday/path-dependent hedging P&L.
+- A single day's loss can exceed 100% of the fixed risk-capital base at this
+  position sizing; `backtest.py` floors compounding NAV at zero once wiped
+  out (matching real-world liquidation behavior) rather than letting NAV go
+  negative and compounding through sign flips.
 
 ## Reproducibility
 
@@ -125,4 +182,5 @@ smoothly absorbing them.
 python scripts/fetch_databento.py        # SPX option chains (skips cached chunks; costs real money on first run)
 python scripts/validate_full_history.py  # builds + validates the synthetic implied-vol series vs VIX
 python scripts/compute_vrp.py            # Phase 3 + 4: realized variance and VRP
+python scripts/run_strategy.py           # Phase 5: cost-aware short-variance carry, gross vs. net
 ```

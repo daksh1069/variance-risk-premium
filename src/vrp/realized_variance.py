@@ -55,6 +55,20 @@ def forward_realized_variance(daily_variance: pd.Series, window_calendar_days: i
     return pd.Series(result, dtype=float).sort_index()
 
 
+def trailing_realized_variance(ohlc: pd.DataFrame, window_trading_days: int = 10, estimator: str = "close_to_close") -> pd.Series:
+    """Backward-looking annualized realized variance using only returns up to
+    and including t — safe for a live decision/risk-control signal, unlike
+    forward_realized_variance (which is intentionally forward-looking for VRP).
+    """
+    daily_fns = {
+        "close_to_close": daily_variance_close_to_close,
+        "parkinson": daily_variance_parkinson,
+        "garman_klass": daily_variance_garman_klass,
+    }
+    daily_var = daily_fns[estimator](ohlc)
+    return TRADING_DAYS_PER_YEAR * daily_var.rolling(window_trading_days).mean()
+
+
 def realized_variance_series(ohlc: pd.DataFrame, window_calendar_days: int = 30, estimator: str = "close_to_close") -> pd.Series:
     """estimator: 'close_to_close' (default/headline), 'parkinson', or 'garman_klass'."""
     daily_fns = {
