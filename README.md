@@ -3,7 +3,8 @@
 Replicates a 30-day SPX variance swap from option strips (model-free implied
 variance, CBOE VIX methodology), measures the variance risk premium against
 realized variance, and backtests a cost-aware short-variance carry. See
-[plan.md](plan.md) for the full spec and phased build plan.
+[plan.md](plan.md) for the full spec and [RESULTS.md](RESULTS.md) for
+validated output, assumptions, and disclosed limitations.
 
 ## Setup
 
@@ -17,8 +18,18 @@ cp .env.example .env       # fill in DATABENTO_API_KEY
 ## Run
 
 ```
-python run.py        # full pipeline (not yet implemented — Phase 0 in progress)
-streamlit run app.py  # dashboard (Phase 6)
+python run.py          # full pipeline: fetch -> validate -> VRP -> strategy
+streamlit run app.py   # interactive dashboard
+```
+
+`run.py` chains the four phase scripts in order. Each is also independently
+runnable (see [RESULTS.md](RESULTS.md)'s Reproducibility section):
+
+```
+python scripts/fetch_databento.py        # Phase 1: SPX option chain pull (cost-gated; cached chunks are free to re-run)
+python scripts/validate_full_history.py  # Phase 2: implied-variance replication, validated against real VIX
+python scripts/compute_vrp.py            # Phase 3-4: realized variance + variance risk premium
+python scripts/run_strategy.py           # Phase 5: cost-aware short-variance carry backtest
 ```
 
 ## Data sources
@@ -35,5 +46,6 @@ streamlit run app.py  # dashboard (Phase 6)
 
 ## Status
 
-Phase 0 (setup) in progress. See `plan.md` §5 for the phase list and
-`RESULTS.md` (once it exists) for validated output.
+All phases (0-6) complete. Implied-variance replication validated against
+real VIX (0.568 mean abs error, 0.9909 correlation, 2017-2023). See
+[RESULTS.md](RESULTS.md) for full results, assumptions, and limitations.
