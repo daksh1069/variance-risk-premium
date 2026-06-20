@@ -20,17 +20,30 @@ from src.vrp.ingest import underlying
 IMPLIED_PATH = DATA_RAW_DIR.parent / "cache" / "synthetic_vs_vix_2017_2023.parquet"
 OUT_PATH = DATA_RAW_DIR.parent / "cache" / "vrp_2017_2023.parquet"
 
+ESTIMATORS = ["close_to_close", "parkinson", "garman_klass"]
+
 if __name__ == "__main__":
     implied = pd.read_parquet(IMPLIED_PATH)["variance_30d"]
     spx = underlying.fetch_underlying_history()
-    realized = rv.realized_variance_series(spx, window_calendar_days=30, estimator="close_to_close")
 
-    df = vrp_mod.compute_vrp(implied, realized)
-    df.to_parquet(OUT_PATH)
-    print(f"saved VRP series ({len(df)} rows) to {OUT_PATH}")
+    for estimator in ESTIMATORS:
+        realized = rv.realized_variance_series(spx, window_calendar_days=30, estimator=estimator)
+        df = vrp_mod.compute_vrp(implied, realized)
+        out_path = DATA_RAW_DIR.parent / "cache" / f"vrp_2017_2023_{estimator}.parquet"
+        df.to_parquet(out_path)
+        print(f"[{estimator}] saved VRP series ({len(df)} rows) to {out_path}")
+        if estimator == "close_to_close":
+            df.to_parquet(OUT_PATH)  # headline estimator, kept at the original path too
 
+    # trailing (backward-looking) realized vol for the dashboard's tail-stop display
+    trailing = rv.trailing_realized_variance(spx, window_trading_days=10)
+    trailing.to_frame("trailing_realized_variance").to_parquet(
+        DATA_RAW_DIR.parent / "cache" / "trailing_realized_variance.parquet"
+    )
+
+    df = pd.read_parquet(OUT_PATH)
     print()
-    print("Summary stats:")
+    print("Summary stats (close_to_close):")
     for k, v in vrp_mod.summary_stats(df).items():
         print(f"  {k}: {v:.4f}" if isinstance(v, float) else f"  {k}: {v}")
 

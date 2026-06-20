@@ -4,7 +4,20 @@ Running results document, updated phase by phase. Every number below is
 reproducible from the scripts cited next to it — nothing here is hand-typed
 or rounded up from a different run.
 
-**Status:** Phases 0-5 complete and validated. Phase 6 (dashboard) not yet built.
+**Status:** All phases (0-6) complete. Run the dashboard: `streamlit run app.py`.
+
+## Phase 6 — Dashboard
+
+`streamlit run app.py`. Sidebar controls split into two tiers, deliberately:
+cost bps, position sizing/tail-stop, realized-vol estimator, and gross/net
+recompute live (they only touch the ~1,700-row VRP/strategy series — cheap).
+Target tenor is shown but fixed at 30 days, since changing it would mean
+re-running the full historical option-chain replication (the expensive,
+validated part of this project), not a dashboard-speed operation — the
+control is disabled rather than silently faked. The Snapshot tab loads only
+the one cached chunk file relevant to the selected date (not all 373MB of
+raw option data) and shows a Black-76 implied-vol smile per expiry, built
+from the same put-call-parity forward the replication itself uses.
 
 ## Assumptions (read before trusting anything below)
 

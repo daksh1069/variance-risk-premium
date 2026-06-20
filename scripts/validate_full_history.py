@@ -15,9 +15,8 @@ import pandas as pd
 
 from config import DATA_RAW_DIR
 from src.vrp import cleaning, implied_variance
+from src.vrp.data_access import ALL_LABELS as LABELS
 from src.vrp.ingest import cboe_vix, fred
-
-LABELS = ["2017", "2018"] + [f"{y}-Q{q}" for y in range(2019, 2024) for q in range(1, 5)]
 
 
 def load_full_history():
