@@ -1,4 +1,4 @@
-"""Phase 5 driver: cost-aware short 30-day variance carry, gross vs. net.
+"""Cost-aware short 30-day variance carry backtest, gross vs. net.
 
 Vega notional is normalized to $1 (a sizing base for the fixed-risk-budget
 convention — see backtest.py docstring); costs and P&L scale linearly in it,

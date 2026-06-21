@@ -1,14 +1,14 @@
-"""Realized variance from the SPX underlying (Phase 3).
+"""Realized variance from the SPX underlying.
 
 Primary estimator: forward 30-calendar-day close-to-close realized variance,
 aligned so realized_variance.loc[t] is the variance realized strictly over
-(t, t+30 calendar days] — this is what Phase 4 (VRP) compares against
+(t, t+30 calendar days] — this is what the VRP calculation compares against
 *today's* (t) implied variance. No look-ahead in the other direction: this
 series is intentionally forward-looking by construction (that's the point
 of VRP), but each value only uses returns that occur after t, never before.
 
 Parkinson and Garman-Klass (from daily OHLC) are provided as robustness
-checks per the brief — close-to-close is the headline estimator.
+checks — close-to-close is the headline estimator.
 """
 
 import numpy as np

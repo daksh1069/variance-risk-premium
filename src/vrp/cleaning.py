@@ -13,7 +13,7 @@ SYMBOL_PATTERN = r"(?P<yy>\d{2})(?P<mm>\d{2})(?P<dd>\d{2})(?P<right>[CP])(?P<str
 def load_panel(definition_path, ohlcv_path) -> pd.DataFrame:
     """Parse strike/expiry/right straight from each bar's own `symbol` field.
 
-    Deliberately does NOT join on instrument_id: Databento/OPRA recycle
+    Does not join on instrument_id: Databento/OPRA recycle
     instrument_id for entirely different contracts over time (confirmed by
     cross-checking a specific 2023-12-20 case — the ID our definitions table
     said was "strike 4080 call exp 2024-01-19" was, on that actual date, a
@@ -57,8 +57,7 @@ def apply_quality_filters(panel: pd.DataFrame) -> pd.DataFrame:
     """Drop strikes with no trade that day or a non-positive close.
 
     We don't have bid/ask (see databento.py docstring for why), so "no trade
-    that day" (volume == 0) is our only available proxy for "stale/illiquid" —
-    document this as a limitation, not silently absorb it.
+    that day" (volume == 0) is our only available proxy for "stale/illiquid."
     """
     out = panel[(panel["volume"] > 0) & (panel["close"] >= MIN_OPTION_PRICE)].copy()
     return out
@@ -72,7 +71,7 @@ def full_strike_grid(definition_path) -> pd.DataFrame:
     silently inflates ΔK across any gap left by an untraded strike, which is
     exactly what blew up the 2020-03-16 variance estimate (see RESULTS.md).
 
-    Deliberately does NOT dedupe by instrument_id first (see load_panel's
+    Does not dedupe by instrument_id first (see load_panel's
     docstring on ID recycling) — every (expiration, strike_price) pair across
     every definition record is used directly, since we only need the set of
     strikes that were ever listed for an expiry, not a clean ID mapping.

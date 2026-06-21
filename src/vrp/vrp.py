@@ -1,4 +1,4 @@
-"""Variance risk premium (Phase 4): today's implied variance minus the
+"""Variance risk premium: today's implied variance minus the
 variance subsequently realized over the next 30 days.
 
 Strictly forward-looking by construction (matches realized_variance.py's

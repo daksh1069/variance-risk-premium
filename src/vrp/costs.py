@@ -1,10 +1,9 @@
-"""Transaction cost model for the short-variance carry strategy (Phase 5).
+"""Transaction cost model for the short-variance carry strategy.
 
 A single bps rate applied to the vega notional traded at entry: one
 transaction-cost component plus the bid-ask half-spread paid on both sides
 of establishing the position. Both rates are placeholders (see config.py)
-pending real cost data — documented as an explicit assumption in RESULTS.md,
-not smuggled in as a precise number.
+pending real cost data — see RESULTS.md.
 """
 
 from config import BID_ASK_HALF_SPREAD_BPS, TRANSACTION_COST_BPS

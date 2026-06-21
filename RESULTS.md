@@ -1,25 +1,23 @@
 # Results
 
-Running results document, updated phase by phase. Every number below is
-reproducible from the scripts cited next to it — nothing here is hand-typed
-or rounded up from a different run.
+Every number below is reproducible from the scripts cited next to it —
+nothing here is hand-typed or rounded up from a different run.
 
-**Status:** All phases (0-6) complete. Run the dashboard: `streamlit run app.py`.
+**Status:** Complete. Run the dashboard: `streamlit run app.py`.
 
-## Phase 6 — Dashboard
+## Dashboard
 
-`streamlit run app.py`. Sidebar controls split into two tiers, deliberately:
-cost bps, position sizing/tail-stop, realized-vol estimator, and gross/net
-recompute live (they only touch the ~1,700-row VRP/strategy series — cheap).
-Target tenor is shown but fixed at 30 days, since changing it would mean
-re-running the full historical option-chain replication (the expensive,
-validated part of this project), not a dashboard-speed operation — the
-control is disabled rather than silently faked. The Snapshot tab loads only
-the one cached chunk file relevant to the selected date (not all 373MB of
-raw option data) and shows a Black-76 implied-vol smile per expiry, built
-from the same put-call-parity forward the replication itself uses.
+`streamlit run app.py`. Sidebar controls split into two tiers: cost bps,
+position sizing/tail-stop, realized-vol estimator, and gross/net recompute
+live (they only touch the ~1,700-row VRP/strategy series — cheap). Target
+tenor is shown but fixed at 30 days, since changing it would mean
+re-running the full historical option-chain replication — the control is
+disabled rather than silently faked. The Snapshot tab loads only the one
+cached chunk file relevant to the selected date (not all 373MB of raw
+option data) and shows a Black-76 implied-vol smile per expiry, built from
+the same put-call-parity forward the replication itself uses.
 
-## Assumptions (read before trusting anything below)
+## Assumptions
 
 | Assumption | Value | Why |
 |---|---|---|
@@ -27,16 +25,16 @@ from the same put-call-parity forward the replication itself uses.
 | Data window | 2017-01-01 to 2023-12-31 | Bounded by Databento OPRA history cost; covers Feb 2018 (Volmageddon), Mar 2020 (COVID), and 2022 |
 | Underlying | SPX (`^GSPC` via yfinance) | Free, daily OHLC |
 | Risk-free rate | FRED `DGS3MO` (3M Treasury), single rate for both near/next legs | Free; simplification vs. VIX's two-point yield-curve interpolation |
-| Option prices | Last-trade daily close, **not bid/ask mid** | True quote data (Databento `cbbo`) cost ~$87/year alone — unaffordable at this project's ~$105 credit budget. Mitigated by a minimum-volume liquidity filter and a minimum-volume gate on forward/ATM-strike selection (see bugs below) |
-| Option chain breadth | Standard monthly SPX expiries only (`SPX.OPT` parent symbol); **no SPXW weeklies** | Same budget constraint — weeklies would have ~4x'd the pull cost |
+| Option prices | Last-trade daily close, not bid/ask mid | True quote data (Databento `cbbo`) cost ~$87/year alone — unaffordable at this project's ~$105 credit budget. Mitigated by a minimum-volume liquidity filter and a minimum-volume gate on forward/ATM-strike selection |
+| Option chain breadth | Standard monthly SPX expiries only (`SPX.OPT` parent symbol); no SPXW weeklies | Same budget constraint — weeklies would have ~4x'd the pull cost |
 | Realized variance | Forward 30-calendar-day close-to-close log returns, annualized by `252/n` (n = actual trading days in that window) | Standard estimator; Parkinson/Garman-Klass cross-checked as robustness |
 | VRP | `implied_variance(t) − realized_variance(t→t+30)`, strictly forward-looking | No look-ahead: realized side only ever uses returns after t |
 | Strategy sizing | Rolling short 30-day variance swaps, fixed *aggregate* vega notional, sized per-entry as `vega_notional / n` (n ≈ 21 trading days) since ~n tranches are open at once | Without the 1/n split, aggregate exposure would be ~n× the stated target |
-| Strategy costs | `TRANSACTION_COST_BPS = 5.0` + `2 × BID_ASK_HALF_SPREAD_BPS = 5.0` = 10 bps of vega notional, charged once at entry | **Placeholders, not real cost data** — flagged explicitly in `config.py`; revisit if real bid-ask data becomes available |
+| Strategy costs | `TRANSACTION_COST_BPS = 5.0` + `2 × BID_ASK_HALF_SPREAD_BPS = 5.0` = 10 bps of vega notional, charged once at entry | Placeholders, not real cost data — flagged explicitly in `config.py`; revisit if real bid-ask data becomes available |
 | Strategy risk control | Tail stop: skip new entries when trailing (backward-looking, no look-ahead) 10-day realized vol > 35% | ~2.2 std above the full-sample mean trailing realized vol (14.3%, std 9.2%) — existing tranches still mature normally; only fresh issuance is paused |
-| Strategy P&L accrual | Each tranche's lifetime payoff (`variance_notional × VRP`) is amortized linearly across the trading days it's held | Simplification vs. true daily variance-swap mark-to-market (which has its own day-to-day volatility); documented, not hidden |
+| Strategy P&L accrual | Each tranche's lifetime payoff (`variance_notional × VRP`) is amortized linearly across the trading days it's held | Simplification vs. true daily variance-swap mark-to-market, which has its own day-to-day volatility |
 
-## Phase 2 — Implied Variance Validation (the project's correctness gate)
+## Implied Variance Validation
 
 Synthetic 30-day implied volatility vs. the real CBOE VIX, 2017-2023, 1,676
 trading days. Reproduce: `python scripts/validate_full_history.py`.
@@ -73,8 +71,7 @@ Per-year mean abs error (no regime where the replication breaks down):
    that's violated, the weights go outside `[0,1]` and amplify the gap
    between the two legs without bound. Fixed in
    `implied_variance._select_bracket_expiries` by requiring a genuine
-   straddle and dropping the date otherwise — honest under-coverage instead
-   of a fabricated number.
+   straddle and dropping the date otherwise.
 3. **`instrument_id` reuse by the exchange (worst case: 2023-12-20, error
    836 vol points).** Databento/OPRA recycle numeric `instrument_id` values
    for entirely different contracts over time. Joining daily bars to a
@@ -85,7 +82,7 @@ Per-year mean abs error (no regime where the replication breaks down):
    `symbol` field). Fixed in `cleaning.load_panel` by parsing each bar's
    `symbol` field directly instead of joining on `instrument_id`.
 
-## Phase 3 — Realized Variance
+## Realized Variance
 
 Forward 30-day realized variance from SPX close-to-close returns.
 Cross-checked against Parkinson and Garman-Klass range-based estimators:
@@ -93,7 +90,7 @@ correlation with close-to-close is 0.96 (Parkinson) and 0.95 (Garman-Klass)
 — all three estimators agree directionally. Sanity-checked magnitudes:
 ~7-8% in calm June 2017, up to 96% in the Feb-Mar 2020 COVID window.
 
-## Phase 4 — Variance Risk Premium
+## Variance Risk Premium
 
 `implied_variance(t)` minus the variance realized over the following 30
 days, 2017-2023, 1,676 days. Reproduce: `python scripts/compute_vrp.py`.
@@ -119,11 +116,10 @@ meaningfully thinner and less reliable in crisis years:
 **Worst single days** (all within Feb 14 – Mar 4, 2020): VRP as negative as
 **−72.3 vol points** on 2020-02-21, where implied vol sat at 17.3% while the
 following 30 days realized 89.6% — implied vol did not come close to
-pricing the COVID crash in advance. This matches the brief's stated
-expectation: VRP turns sharply negative around vol spikes rather than
-smoothly absorbing them.
+pricing the COVID crash in advance. VRP turns sharply negative around vol
+spikes rather than smoothly absorbing them.
 
-## Phase 5 — Cost-Aware Short-Variance Carry
+## Cost-Aware Short-Variance Carry
 
 Rolling short 30-day variance swaps (see assumptions above for sizing, costs,
 and the tail-stop). Reproduce: `python scripts/run_strategy.py`. Returns are
@@ -155,25 +151,21 @@ this strategy is exposed to *realized variance over the following 30 days*,
 not daily-rebalanced front-month VIX futures. Volmageddon was primarily a
 violent one-day repricing of near-term implied vol (what destroyed
 daily-rebalanced products like XIV); it did not translate into anywhere
-near as much *sustained* 30-day realized variance as COVID did. Both the
-attractive calm-regime Sharpe and the severe, regime-dependent drawdowns
-match the brief's stated expectations — the tail is reported here as the
-headline finding, not smoothed into the average.
+near as much *sustained* 30-day realized variance as COVID did.
 
 The tail stop (skip new entries when trailing realized vol > 35%) fired on
 62 of 1,676 candidate days, all within the COVID window — it stops *new*
 exposure from being added once a crisis is already visible, but cannot
 protect tranches already opened during the preceding calm period. That
-residual exposure is the entire source of the COVID drawdown above; this is
-disclosed as a real, structural limitation of a tail stop (as opposed to a
-hedge), not papered over.
+residual exposure is the entire source of the COVID drawdown above — a
+structural limitation of a tail stop, as opposed to a hedge.
 
-## Limitations (disclosed, not hidden)
+## Limitations
 
-- No bid/ask quotes — last-trade close only (see Phase 2 bug #1's mitigation).
+- No bid/ask quotes — last-trade close only (see the stale-tick mitigation above).
 - No SPXW weeklies — coarser near/next bracketing than the official VIX
-  methodology (see Phase 2 bug #2's mitigation: affected dates are dropped,
-  not extrapolated).
+  methodology (affected dates are dropped, not extrapolated; see the
+  bracket-extrapolation mitigation above).
 - Single 3M T-bill rate proxy for both near/next legs, not a full yield-curve
   interpolation.
 - Data window is 2017-2023, not extended to the present, due to the
@@ -194,6 +186,6 @@ hedge), not papered over.
 ```
 python scripts/fetch_databento.py        # SPX option chains (skips cached chunks; costs real money on first run)
 python scripts/validate_full_history.py  # builds + validates the synthetic implied-vol series vs VIX
-python scripts/compute_vrp.py            # Phase 3 + 4: realized variance and VRP
-python scripts/run_strategy.py           # Phase 5: cost-aware short-variance carry, gross vs. net
+python scripts/compute_vrp.py            # realized variance and VRP
+python scripts/run_strategy.py           # cost-aware short-variance carry, gross vs. net
 ```

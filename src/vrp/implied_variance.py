@@ -4,9 +4,9 @@ For each date: pick near-term/next-term expiries bracketing 30 days, compute
 each term's model-free variance from the OTM strike strip (using the forward
 derived from put-call parity, not the raw spot), then time-interpolate to a
 constant 30-day tenor. Output is a synthetic "VIX" series to validate against
-the real one — see RESULTS.md once Phase 2 validation is run.
+the real one — see RESULTS.md.
 
-Known limitation (documented, not hidden): Q(K) uses last-trade daily close,
+Known limitation: Q(K) uses last-trade daily close,
 not bid/ask mid, because true quote data was unaffordable at this project's
 data budget (see databento.py docstring). ΔK spacing and the tail-truncation
 point are computed from the *full listed strike grid* (every strike ever

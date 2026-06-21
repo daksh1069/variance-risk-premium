@@ -1,5 +1,5 @@
-"""Phase 3 + 4 driver: realized variance from SPX returns, then the variance
-risk premium against the Phase 2 synthetic implied-variance series.
+"""Realized variance from SPX returns, then the variance risk premium
+against the synthetic implied-variance series.
 
 Requires data/cache/synthetic_vs_vix_2017_2023.parquet (from
 validate_full_history.py) to already exist.

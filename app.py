@@ -5,8 +5,8 @@ Run: streamlit run app.py
 Sidebar controls that only touch the small VRP/strategy series (cost bps,
 position sizing/tail-stop, realized-vol estimator, gross/net) recompute
 live — they're cheap (a few thousand rows). The option-chain replication
-itself (Phase 2) is NOT recomputed live: it's the expensive, validated part
-of this project (see RESULTS.md), so the dashboard reads its cached output.
+itself is NOT recomputed live: it's the expensive, validated part of this
+project (see RESULTS.md), so the dashboard reads its cached output.
 Target tenor is fixed at 30 days for the same reason — re-deriving the
 chain for a different tenor would mean re-running the full historical
 replication, not a dashboard-speed operation.

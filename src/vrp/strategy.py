@@ -1,4 +1,4 @@
-"""Phase 5: cost-aware short 30-day variance carry.
+"""Cost-aware short 30-day variance carry.
 
 Each trading day with a valid VRP observation, short a 30-day variance swap
 sized to a fixed vega notional. A variance swap's short-side terminal payoff

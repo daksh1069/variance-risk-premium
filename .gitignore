@@ -8,3 +8,4 @@ data/cache/
 .DS_Store
 .ipynb_checkpoints/
 .claude/
+plan.md

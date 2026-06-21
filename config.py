@@ -32,10 +32,10 @@ DATABENTO_SCHEMA = "ohlcv-1d"  # cheapest schema sufficient for daily EOD replic
 DATABENTO_MAX_SPEND_USD = 95.00  # covers the approved $90.17 full pull + $2.44 pilot = $92.61, leaving buffer below the $105 credit
 DATABENTO_SPEND_LEDGER = DATA_RAW_DIR / "databento" / ".spend_ledger.json"
 
-# --- Costs (Phase 5) --------------------------------------------------------
+# --- Strategy costs ---------------------------------------------------------
 TRANSACTION_COST_BPS = 5.0  # placeholder; revisit once strategy is built
 BID_ASK_HALF_SPREAD_BPS = 2.5  # placeholder
 
-# --- Option quality filters (Phase 1) --------------------------------------
+# --- Option quality filters --------------------------------------------
 MIN_OPTION_PRICE = 0.05
 MONEYNESS_BAND = (0.5, 1.5)  # strike / spot bounds for inclusion

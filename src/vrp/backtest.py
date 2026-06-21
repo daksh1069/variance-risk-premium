@@ -1,10 +1,10 @@
-"""Performance statistics for the Phase 5 strategy.
+"""Performance statistics for the short-variance carry strategy.
 
-P&L is reported as a fraction of the fixed vega notional (the "risk capital"
-the strategy is sized against, per the brief's "sized to fixed vega/risk").
-CAGR treats cumulative P&L-as-fraction as if compounding into that base —
-a standard simplifying convention for fixed-risk-budget overlay strategies,
-not literal reinvestment of variance-swap payoffs.
+P&L is reported as a fraction of the fixed vega notional — the risk-capital
+base the strategy is sized against. CAGR treats cumulative P&L-as-fraction
+as if compounding into that base — a standard simplifying convention for
+fixed-risk-budget overlay strategies, not literal reinvestment of
+variance-swap payoffs.
 """
 
 import numpy as np
