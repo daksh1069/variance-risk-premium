@@ -2,8 +2,10 @@
 
 Replicates a 30-day SPX variance swap from option strips (model-free implied
 variance, CBOE VIX methodology), measures the variance risk premium against
-realized variance, and backtests a cost-aware short-variance carry. See
-[RESULTS.md](RESULTS.md) for validated output, assumptions, and limitations.
+realized variance, and backtests a cost-aware short-variance carry. The
+implied-variance replication is validated against the real CBOE VIX (0.568
+mean abs error, 0.9909 correlation, 2017-2023). See [RESULTS.md](RESULTS.md)
+for full results, assumptions, and limitations.
 
 ## Setup
 
@@ -42,9 +44,3 @@ python scripts/run_strategy.py           # cost-aware short-variance carry backt
 - SPX/SPY underlying: yfinance.
 - Bloomberg (Excel Add-in only, no local API) is used only for ad hoc
   spot-checks, not bulk ingestion.
-
-## Status
-
-Complete. Implied-variance replication validated against real VIX (0.568
-mean abs error, 0.9909 correlation, 2017-2023). See [RESULTS.md](RESULTS.md)
-for full results, assumptions, and limitations.

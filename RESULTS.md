@@ -3,8 +3,6 @@
 Every number below is reproducible from the scripts cited next to it —
 nothing here is hand-typed or rounded up from a different run.
 
-**Status:** Complete. Run the dashboard: `streamlit run app.py`.
-
 ## Dashboard
 
 `streamlit run app.py`. Sidebar controls split into two tiers: cost bps,
